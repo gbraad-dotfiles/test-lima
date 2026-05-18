@@ -1,0 +1,35 @@
+name: Rub Fedora using Lima
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  fedora:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: "Set up Lima"
+      uses: lima-vm/lima-actions/setup@v1
+      id: lima-actions-setup
+
+    - name: "Cache ~/.cache/lima"
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/lima
+        key: lima-${{ steps.lima-actions-setup.outputs.version }}
+
+    - name: "Start an instance of Fedora"
+      run: |
+        limactl start --name=default --cpus=1 --memory=1 --network=lima:user-v2 template:fedora
+
+    - name: "Install Apache"
+      run: |
+        lima sudo dnf install -y httpd
+        lima sudo systemctl enable --now httpd 
+
+    - name: "Verify status"
+      run: |
+        lima sudo systemctl status
