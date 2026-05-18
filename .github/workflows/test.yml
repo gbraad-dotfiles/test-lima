@@ -1,4 +1,4 @@
-name: Rub Fedora using Lima
+name: Run Fedora using Lima
 
 on:
   workflow_dispatch:
@@ -11,6 +11,10 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
+    - name: Remove unwanted stuff
+      if: ${{ inputs.cleanup  }}
+      uses: gbraad-actions/remove-unwanted@v1
+
     - name: "Set up Lima"
       uses: lima-vm/lima-actions/setup@v1
       id: lima-actions-setup
@@ -20,6 +24,18 @@ jobs:
       with:
         path: ~/.cache/lima
         key: lima-${{ steps.lima-actions-setup.outputs.version }}
+
+    - name: Get last 3 chars of hostname
+      id: runner_id
+      run: |
+        echo "last3=${HOSTNAME: -3}" >> $GITHUB_OUTPUT
+
+    - name: Tailscale
+      uses: gbraad-actions/tailscale-action@v1
+      with:
+        authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+        args: --ssh --accept-dns=false --operator=runner --advertise-exit-node
+        hostname: "dotfiles-${{ steps.runner_id.outputs.last3 }}"
 
     - name: "Start an instance of Fedora"
       run: |
@@ -33,3 +49,10 @@ jobs:
     - name: "Verify status"
       run: |
         lima sudo systemctl status
+
+    - name: Hang around
+      if: always()
+      run: |
+        IP=`tailscale ip -4`
+        echo "Use the following command to connect \`tailscale ssh runner@${IP}\` or \`rscreen runner@${IP}\`"
+        sleep 18000
