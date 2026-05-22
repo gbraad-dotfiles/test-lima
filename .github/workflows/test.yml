@@ -54,10 +54,10 @@ jobs:
         action: install
 
     - name: Set lima as runtime for machine
-      uses: gbraad-actions/zsh-action@main
+      uses: gbraad-dotfiles/dotini-action@main
       with:
-        run: |
-          git config -f ~/.config/dotfiles/local/machine.ini 'machine.runtime' 'limactl'
+        inifile: machine
+        args: machine.runtime "limactl"
 
     - name: Start Fedora cloud image
       uses: gbraad-dotfiles/machine-action@main
